@@ -267,6 +267,10 @@ This separation ensures responsive UI during data acquisition.
 
 Designed for Thwing Albert Universal Testing Systems. Connect via USB serial adapter. Default baudrate is 9600 - adjust in settings if your machine uses a different rate.
 
+## Acknowledgments
+
+This project was developed collaboratively with [Claude](https://www.anthropic.com/claude) (Opus 4.5). Nearly all code was AI-generated, with core application logic audited and refined under human guidance. Direct human contributions total fewer than 50 lines of code.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
