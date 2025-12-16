@@ -268,4 +268,4 @@ Designed for Thwing Albert Universal Testing Systems. Connect via USB serial ada
 
 ## License
 
-See LICENSE file for details.
+MIT License. See [LICENSE](LICENSE) for details.
