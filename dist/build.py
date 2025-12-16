@@ -4,7 +4,7 @@ UTM Data Logger - Build Script
 Assembles the application into a distributable zip file.
 
 Uses python32_base.zip as a starting point (contains portable Python 3.4.4)
-and appends the application files and launchers.
+and appends the application files plus everything in the package/ directory.
 """
 from __future__ import print_function
 
@@ -18,6 +18,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 BUILD_NAME = "UTM_Data_Logger"
 PYTHON_BASE_ZIP = "python32_base.zip"
+PACKAGE_DIR = "package"
 
 
 def build():
@@ -75,13 +76,18 @@ def build():
                 arc = os.path.join(BUILD_NAME, rel)
                 zf.write(src, arc)
 
-        # Add launcher scripts
-        print("  Adding launcher scripts...")
-        for launcher in ['UTM_Logger.bat', 'UTM_Logger_CLI.bat']:
-            src = os.path.join(SCRIPT_DIR, launcher)
-            if os.path.exists(src):
-                arc = os.path.join(BUILD_NAME, launcher)
-                zf.write(src, arc)
+        # Add everything from package/ directory
+        package_dir = os.path.join(SCRIPT_DIR, PACKAGE_DIR)
+        if os.path.isdir(package_dir):
+            print("  Adding package files...")
+            for root, dirs, files in os.walk(package_dir):
+                for f in files:
+                    if f.endswith('~'):
+                        continue
+                    src = os.path.join(root, f)
+                    rel = os.path.relpath(src, package_dir)
+                    arc = os.path.join(BUILD_NAME, rel)
+                    zf.write(src, arc)
 
     print()
     print("Build complete: {}".format(zip_path))

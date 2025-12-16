@@ -182,7 +182,7 @@ python build.py
 
 The build script:
 1. Copies `python32_base.zip` as the starting point
-2. Appends the `app/` directory and launcher scripts
+2. Appends the `app/` directory and everything in `dist/package/`
 3. Outputs a timestamped zip (e.g., `UTM_Data_Logger_20251216.zip`)
 
 ### Distribution Contents
@@ -215,9 +215,10 @@ UTM_data_logger/
 │       └── settings.py      # Configuration persistence
 ├── dist/
 │   ├── build.py             # Windows distribution builder
-│   ├── python32/            # Portable Python (user-supplied)
-│   ├── UTM_Logger.bat       # Windows GUI launcher
-│   └── UTM_Logger_CLI.bat   # Windows CLI launcher
+│   ├── python32_base.zip    # Portable Python base archive
+│   └── package/             # Files included in distribution
+│       ├── UTM_Logger.bat       # Windows GUI launcher
+│       └── UTM_Logger_CLI.bat   # Windows CLI launcher
 └── firmware/
     └── src/main.cpp         # Arduino Due simulator
 ```
