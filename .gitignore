@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*~
+
+# Application
+settings.ini
+
+# Build artifacts
+dist/UTM_Data_Logger_*.zip
+dist/python32/
+
+# PlatformIO
+firmware/.pio/
+firmware/.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
