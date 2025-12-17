@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Main UI for UTM data logger.
 Tkinter-based interface with test list and graph.

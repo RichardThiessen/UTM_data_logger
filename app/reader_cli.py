@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: MIT
 """
 CLI client for StreamReader - test reader functionality without UI.
 

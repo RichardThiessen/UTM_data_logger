@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Graph widget for UTM data logger.
 Simple line plot using Tkinter Canvas.

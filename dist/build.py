@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: MIT
 """
 UTM Data Logger - Build Script
 Assembles the application into a distributable zip file.
@@ -88,6 +89,12 @@ def build():
                     rel = os.path.relpath(src, package_dir)
                     arc = os.path.join(BUILD_NAME, rel)
                     zf.write(src, arc)
+
+        # Add LICENSE from project root
+        license_path = os.path.join(PROJECT_ROOT, 'LICENSE')
+        if os.path.isfile(license_path):
+            print("  Adding LICENSE...")
+            zf.write(license_path, os.path.join(BUILD_NAME, 'LICENSE.txt'))
 
     print()
     print("Build complete: {}".format(zip_path))

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Logging configuration for UTM data logger.
 """

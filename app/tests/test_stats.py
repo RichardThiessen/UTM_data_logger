@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Tests for stats module."""
 
 import unittest

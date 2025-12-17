@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Stream reader for UTM data logger.
 Reads ASCII float data, detects test boundaries via adaptive timeout.

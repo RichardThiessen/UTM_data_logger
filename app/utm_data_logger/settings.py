@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Settings persistence for UTM data logger.
 Stores COM port, baudrate, and other configuration in INI file.

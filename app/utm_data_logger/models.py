@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Data models for UTM data logger.
 

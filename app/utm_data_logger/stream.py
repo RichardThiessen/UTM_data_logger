@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Byte stream abstractions for UTM data logger.
 Provides unified interface for sockets and serial ports.

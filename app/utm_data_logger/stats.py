@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """
 Statistics utilities for UTM data logger.
 Linear regression for rate estimation, standard deviation.
