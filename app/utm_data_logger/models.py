@@ -56,8 +56,9 @@ class Test(object):
         """
         recalculate statistics.
         """
-        values, timestamps = self.values,self.timestamps
+        if self.sample_count == len(self.values):return
 
+        values, timestamps = self.values,self.timestamps
         self.sample_count = len(values)
         self.min_value = min(values) if values else None
         self.max_value = max(values) if values else None
@@ -143,7 +144,6 @@ class TestSession(object):
 
         Call this from UI update loop.
         """
-        test_dirty=False
         while True:
             try:
                 event = self.queue.get_nowait()
@@ -157,7 +157,6 @@ class TestSession(object):
                 if self._active_test is None:
                     self._active_test = Test()
                     self.tests.append(self._active_test)
-                    test_dirty=True
                     logger.debug("started test #%d", len(self.tests))
                 self._active_test.add_sample(value, timestamp)
 
@@ -165,7 +164,7 @@ class TestSession(object):
                 if self._active_test is not None:
                     self._active_test.status = Test.STATUS_COMPLETE
                     logger.debug("completed test, n=%d", len(self._active_test.values))
-                    if test_dirty:self._active_test.update() #update dirty active test before it vecomes inactive
+                    self._active_test.update() #update dirty active test before it vecomes inactive
                     self._active_test = None
 
             elif event_type == 'error':
@@ -174,7 +173,7 @@ class TestSession(object):
                     self._active_test.status = Test.STATUS_ERROR
                     self._active_test.error_message = message
                     logger.debug("error test: %s", message)
-                    if test_dirty:self._active_test.update() #update dirty active test before it vecomes inactive
+                    self._active_test.update() #update dirty active test before it vecomes inactive
                     self._active_test = None
 
             elif event_type == 'disconnect':
@@ -184,9 +183,9 @@ class TestSession(object):
                 # Complete any in-progress test
                 if self._active_test is not None:
                     self._active_test.status = Test.STATUS_COMPLETE
-                    if test_dirty:self._active_test.update() #update dirty active test before it vecomes inactive
+                    self._active_test.update() #update dirty active test before it vecomes inactive
                     self._active_test = None
-        if test_dirty and self._active_test:
+        if self._active_test:
             self._active_test.update()
 
     def delete_test(self, test):

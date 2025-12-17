@@ -48,6 +48,10 @@ class GraphCanvas(tk.Canvas):
 
         self._values = []
         self._timestamps = []
+        self._snap_x_to_ticks = False  # Only snap for completed tests
+        
+        self._cached_params = None
+        
         self._x_min = 0.0
         self._x_max = 1.0
         self._y_min = 0.0
@@ -55,7 +59,7 @@ class GraphCanvas(tk.Canvas):
 
         self.bind('<Configure>', self._on_resize)
 
-    def set_data(self, values, timestamps, x_scale_hint=None):
+    def set_data(self, values, timestamps, x_scale_hint=None, completed=False):
         """
         Set the data to plot.
 
@@ -63,17 +67,26 @@ class GraphCanvas(tk.Canvas):
             values: list of Y values
             timestamps: list of X values (timestamps)
             x_scale_hint: optional minimum X range (e.g., previous test duration)
+            completed: if True, snap X axis to next tick if close
         """
-        self._values = list(values) if values else []
+        values,timestamps = (list(values) if values else []),(list(timestamps) if timestamps else [])
+        params=(values,timestamps,x_scale_hint,completed)
+        
+        if self._cached_params==params:return #nothing to update
+        self._cached_params=params
+        
+        self._values = values
         self._timestamps = list(timestamps) if timestamps else []
+        self._snap_x_to_ticks = completed
 
         if self._timestamps:
             t0 = self._timestamps[0]
             self._timestamps = [t - t0 for t in self._timestamps]
-            logger.debug("set_data: %d points, t_range=[0, %.3f], hint=%.3f",
+            logger.debug("set_data: %d points, t_range=[0, %.3f], hint=%.3f, completed=%s",
                          len(self._values),
                          self._timestamps[-1] if self._timestamps else 0,
-                         x_scale_hint or 0)
+                         x_scale_hint or 0,
+                         completed)
 
         self._calculate_bounds(x_scale_hint)
         self._redraw()
@@ -104,6 +117,10 @@ class GraphCanvas(tk.Canvas):
             self._x_max = x_scale_hint
         if self._x_max <= self._x_min:
             self._x_max = self._x_min + 1.0
+
+        # For completed tests, snap to next tick if close
+        if self._snap_x_to_ticks:
+            self._x_max = self._snap_to_next_tick(self._x_min, self._x_max)
 
         # Y bounds (values)
         self._y_min = min(min(self._values),0) #always include zero
@@ -229,6 +246,46 @@ class GraphCanvas(tk.Canvas):
             return (top + bottom) / 2
         ratio = (value - self._y_min) / (self._y_max - self._y_min)
         return bottom - ratio * (bottom - top)
+
+    def _snap_to_next_tick(self, min_val, max_val, threshold=0.1):
+        """
+        Snap max_val to the next tick if it's close.
+
+        Args:
+            min_val: axis minimum
+            max_val: axis maximum
+            threshold: snap if within this fraction of tick step (default 10%)
+
+        Returns:
+            max_val extended to next tick if close, otherwise unchanged
+        """
+        import math
+        range_val = max_val - min_val
+        if range_val <= 0:
+            return max_val
+
+        # Calculate nice tick step (same logic as _nice_ticks)
+        rough_step = range_val / self.TARGET_X_TICKS
+        magnitude = math.pow(10, math.floor(math.log10(rough_step)))
+        residual = rough_step / magnitude
+
+        if residual <= 1.5:
+            tick_step = magnitude
+        elif residual <= 3:
+            tick_step = 2 * magnitude
+        elif residual <= 7:
+            tick_step = 5 * magnitude
+        else:
+            tick_step = 10 * magnitude
+
+        # Find next tick after max_val
+        next_tick = math.ceil(max_val / tick_step) * tick_step
+
+        # Snap if within threshold
+        gap = next_tick - max_val
+        if gap <= tick_step * threshold:
+            return next_tick
+        return max_val
 
     def _nice_ticks(self, min_val, max_val, target_count):
         """Generate nice tick values for an axis."""

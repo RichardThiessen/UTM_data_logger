@@ -332,16 +332,14 @@ class UTMLoggerApp(tk.Tk):
             self._select_tests([in_progress])
 
         # Capture duration hint and clear active test when it completes
-        if self._active_test and self._active_test.status != Test.STATUS_IN_PROGRESS:
+        if self._active_test and self._active_test.status == Test.STATUS_COMPLETE:
             if self._active_test.estimated_duration:
                 self._last_test_duration = self._active_test.estimated_duration
-            self._active_test = None
 
-        # Update graph for active test
-        if self._active_test:
-            self._active_test.update()
-            self._update_graph()
-
+        if in_progress is None:#clear active test if nothing in progress now that update logic has finished
+           self._active_test = None
+           
+        self._update_graph()
         self._update_status()
 
         # Auto-reconnect if enabled and disconnected
@@ -458,7 +456,8 @@ class UTMLoggerApp(tk.Tk):
         if test.status == Test.STATUS_COMPLETE and test.estimated_duration:
             self._last_test_duration = test.estimated_duration
 
-        self._graph.set_data(values, timestamps, self._last_test_duration)
+        completed = test.status != Test.STATUS_IN_PROGRESS
+        self._graph.set_data(values, timestamps, self._last_test_duration, completed=completed)
 
     def _update_status(self):
         """Update status bar."""

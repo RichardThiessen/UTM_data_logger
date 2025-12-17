@@ -14,7 +14,7 @@ import sys
 import time
 
 from utm_data_logger.log import setup_logging
-from utm_data_logger.models import Test, TestSession
+from utm_data_logger.models import TestSession
 
 
 def main():
@@ -71,51 +71,55 @@ def main():
         print("[ERROR] Failed to connect: {}".format(e))
         sys.exit(1)
 
-    print("[INFO] Starting reader (Ctrl+C to stop)")
+    print("[INFO] Waiting for data (Ctrl+C to stop)")
 
-    # Track state for output
-    last_test_count = 0
-    last_sample_counts = {}
+    # Track current test index and sample count
+    current_test_idx = 0
+    last_sample_count = 0
 
-    # Main loop - process events and print output
+    # Main loop
     try:
         while session.is_connected:
             session.process_events()
-
-            # Check for new tests
-            if len(session.tests) > last_test_count:
-                last_test_count = len(session.tests)
-
-            # Print new samples
-            for i, test in enumerate(session.tests):
-                test.update()
-                test_num = i + 1
-                prev_count = last_sample_counts.get(id(test), 0)
-
-                if test.sample_count > prev_count:
-                    # Print new samples
-                    values, timestamps = test.snapshot
-                    for j in range(prev_count, len(values)):
-                        print("[SAMPLE] {:.6f} | Test {} | {}".format(
-                            timestamps[j], test_num, values[j]
-                        ))
-                    last_sample_counts[id(test)] = test.sample_count
-                    sys.stdout.flush()
-
-                # Check for test completion
-                if test.status != Test.STATUS_IN_PROGRESS and prev_count > 0:
-                    if id(test) in last_sample_counts:
-                        status = "ERROR" if test.status == Test.STATUS_ERROR else "COMPLETE"
-                        print("[TEST_{}] Test {} | {} samples".format(
-                            status, test_num, test.sample_count
-                        ))
-                        del last_sample_counts[id(test)]
-                        sys.stdout.flush()
 
             # Check for disconnect
             if session.disconnect_reason:
                 print("[DISCONNECT] {}".format(session.disconnect_reason))
                 break
+
+            # If current test doesn't exist yet, nothing to do
+            if current_test_idx >= len(session.tests):
+                time.sleep(0.01)
+                continue
+
+            test = session.tests[current_test_idx]
+            test_num = current_test_idx + 1
+
+            # Print new samples (use len(values) not sample_count - that's only updated on completion)
+            current_count = len(test.values)
+            if current_count > last_sample_count:
+                for i in range(last_sample_count, current_count):
+                    print("[SAMPLE] Test {} | idx={} t={:.6f} v={:.6f}".format(
+                        test_num, i, test.timestamps[i], test.values[i]
+                    ))
+                last_sample_count = current_count
+                sys.stdout.flush()
+
+            # Check if test completed - print summary and move to next
+            if test.status != test.STATUS_IN_PROGRESS:
+                status = "ERROR" if test.status == test.STATUS_ERROR else "COMPLETE"
+                print("[TEST_{}] Test {} | samples={} min={:.4f} max={:.4f} mean={:.4f} rate={:.1f}Hz duration={:.2f}s".format(
+                    status, test_num,
+                    test.sample_count,
+                    test.min_value or 0,
+                    test.max_value or 0,
+                    test.mean_value or 0,
+                    test.estimated_rate or 0,
+                    test.estimated_duration or 0
+                ))
+                sys.stdout.flush()
+                current_test_idx += 1
+                last_sample_count = 0
 
             time.sleep(0.01)
 
@@ -123,15 +127,8 @@ def main():
         print("\n[INFO] Interrupted")
 
     # Clean up
-    print("[INFO] Stopping")
     session.disconnect()
-
-    # Summary
-    print("[INFO] Total tests: {}".format(len(session.tests)))
-    for i, test in enumerate(session.tests, 1):
-        test.update()
-        status = "ERROR" if test.status == Test.STATUS_ERROR else "OK"
-        print("  Test {}: {} samples [{}]".format(i, test.sample_count, status))
+    print("[INFO] Done. Total tests: {}".format(len(session.tests)))
 
 
 if __name__ == '__main__':
