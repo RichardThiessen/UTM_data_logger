@@ -30,10 +30,13 @@ class Test(object):
     STATUS_COMPLETE = 'complete'
     STATUS_ERROR = 'error'
 
-    def __init__(self):
+    def __init__(self, unit=None):
         # Raw sample data
         self.values = []
         self.timestamps = []
+
+        # Unit of measurement (e.g., "gf" for gram-force)
+        self.unit = unit
 
         # Test status
         self.status = self.STATUS_IN_PROGRESS
@@ -153,12 +156,19 @@ class TestSession(object):
 
             event_type = event[0]
 
-            if event_type == 'sample':
+            if event_type == 'start':
+                _, unit = event
+                self._active_test = Test(unit=unit)
+                self.tests.append(self._active_test)
+                logger.debug("started test #%d, unit=%s", len(self.tests), unit)
+
+            elif event_type == 'sample':
                 _, value, timestamp = event
                 if self._active_test is None:
+                    # Fallback for samples without a start event
                     self._active_test = Test()
                     self.tests.append(self._active_test)
-                    logger.debug("started test #%d", len(self.tests))
+                    logger.debug("started test #%d (no start event)", len(self.tests))
                 self._active_test.add_sample(value, timestamp)
 
             elif event_type == 'complete':

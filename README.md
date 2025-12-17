@@ -108,7 +108,7 @@ Settings are persisted in `settings.ini` (created in the app directory).
 | transpose | False | Tests as columns instead of rows |
 | datapoints | False | Include raw sample values |
 
-Available columns: `test`, `mean`, `peak`, `low`, `stdev`
+Available columns: `test`, `mean`, `peak`, `low`, `stdev`, `unit`
 
 ## Data Format
 

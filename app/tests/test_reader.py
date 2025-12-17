@@ -294,6 +294,139 @@ class TestStreamReader(unittest.TestCase):
         self.assertIn('Mock stream closed', disconnect_events[0][1])
 
 
+class TestUnitParsing(unittest.TestCase):
+    """Tests for unit parsing feature."""
+
+    def test_start_event_with_unit(self):
+        """Test that first sample emits start event with unit."""
+        stream = MockStream([
+            ("   -0.31 gf \n    0.92 gf \n", 0),
+        ])
+        queue = Queue()
+
+        reader = StreamReader(stream, queue)
+        reader.start()
+
+        time.sleep(0.1)
+        stream.close_stream()
+        reader.stop()
+
+        events = drain_queue(queue)
+
+        # Should have start event with unit
+        start_events = [e for e in events if e[0] == 'start']
+        self.assertEqual(len(start_events), 1)
+        self.assertEqual(start_events[0][1], 'gf')
+
+        # Should have sample events with correct values
+        sample_events = [e for e in events if e[0] == 'sample']
+        self.assertEqual(len(sample_events), 2)
+        self.assertAlmostEqual(sample_events[0][1], -0.31)
+        self.assertAlmostEqual(sample_events[1][1], 0.92)
+
+    def test_start_event_without_unit(self):
+        """Test that plain numbers emit start event with None unit."""
+        stream = MockStream([
+            ("1.0\n2.0\n", 0),
+        ])
+        queue = Queue()
+
+        reader = StreamReader(stream, queue)
+        reader.start()
+
+        time.sleep(0.1)
+        stream.close_stream()
+        reader.stop()
+
+        events = drain_queue(queue)
+
+        # Should have start event with no unit
+        start_events = [e for e in events if e[0] == 'start']
+        self.assertEqual(len(start_events), 1)
+        self.assertIsNone(start_events[0][1])
+
+    def test_unit_parsing_with_padding(self):
+        """Test that padded lines with units are parsed correctly."""
+        stream = MockStream([
+            ("   -2.75 gf \n    2.44 gf \n", 0),
+        ])
+        queue = Queue()
+
+        reader = StreamReader(stream, queue)
+        reader.start()
+
+        time.sleep(0.1)
+        stream.close_stream()
+        reader.stop()
+
+        events = drain_queue(queue)
+        sample_events = [e for e in events if e[0] == 'sample']
+        values = [e[1] for e in sample_events]
+        self.assertAlmostEqual(values[0], -2.75)
+        self.assertAlmostEqual(values[1], 2.44)
+
+    def test_multiple_tests_each_get_start_event(self):
+        """Test that each test gets its own start event."""
+        import socket as sock_module
+        import tempfile
+
+        socket_path = tempfile.mktemp(suffix='.sock')
+
+        server = sock_module.socket(sock_module.AF_UNIX, sock_module.SOCK_STREAM)
+        try:
+            os.unlink(socket_path)
+        except OSError:
+            pass
+        server.bind(socket_path)
+        server.listen(1)
+
+        queue = Queue()
+
+        def connect_and_read():
+            from utm_data_logger.stream import SocketStream
+            stream = SocketStream(socket_path)
+            reader = StreamReader(stream, queue, min_timeout=0.05, max_timeout=0.15)
+            reader.start()
+            return reader, stream
+
+        reader_result = [None, None]
+        def client_thread():
+            r, s = connect_and_read()
+            reader_result[0] = r
+            reader_result[1] = s
+
+        client = threading.Thread(target=client_thread)
+        client.start()
+        conn, _ = server.accept()
+        client.join()
+        reader = reader_result[0]
+        stream = reader_result[1]
+
+        # Send first test with unit
+        conn.sendall(b"1.0 gf\n2.0 gf\n")
+        time.sleep(0.3)  # Wait for timeout
+
+        # Send second test with different unit
+        conn.sendall(b"3.0 N\n4.0 N\n")
+        time.sleep(0.3)
+
+        # Clean up
+        conn.close()
+        reader.stop()
+        stream.close()
+        server.close()
+        try:
+            os.unlink(socket_path)
+        except OSError:
+            pass
+
+        events = drain_queue(queue)
+        start_events = [e for e in events if e[0] == 'start']
+        self.assertEqual(len(start_events), 2)
+        self.assertEqual(start_events[0][1], 'gf')
+        self.assertEqual(start_events[1][1], 'N')
+
+
 class TestIntegrationWithSocket(unittest.TestCase):
     """Integration test using actual Unix sockets."""
 

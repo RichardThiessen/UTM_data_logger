@@ -59,6 +59,7 @@ class StreamReader(object):
         self._sample_count = 0
         self._last_sample_time = 0
         self._max_gap_this_test = 0
+        self._current_unit = None
 
     def start(self):
         """Start the reader thread."""
@@ -137,18 +138,29 @@ class StreamReader(object):
                 continue
 
             try:
-                value = float(line)
+                # Extract numeric value and unit (e.g., "-0.31 gf" -> -0.31, "gf")
+                parts = line.split()
+                if not parts:
+                    continue
+                value = float(parts[0])
+                unit = parts[1] if len(parts) > 1 else None
             except ValueError:
                 self._handle_error("Invalid float: {0}".format(line))
                 continue
 
-            self._add_sample(value, timestamp)
+            self._add_sample(value, timestamp, unit)
 
-    def _add_sample(self, value, timestamp):
-        """Add a sample (test start is handled by TestSession)."""
+    def _add_sample(self, value, timestamp, unit=None):
+        """Add a sample, emitting 'start' event on first sample of a test."""
+        # Emit start event on first sample
+        if self._sample_count == 0:
+            self._current_unit = unit
+            self._queue.put(('start', unit))
+            logger.debug("start: unit=%s", unit)
+
         # Track gap for adaptive timeout
-        self._sample_count +=1
-        if self._sample_count>=2:
+        self._sample_count += 1
+        if self._sample_count >= 2:
             gap = timestamp - self._last_sample_time
             if gap > self._max_gap_this_test:
                 self._max_gap_this_test = gap

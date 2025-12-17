@@ -49,6 +49,7 @@ class GraphCanvas(tk.Canvas):
 
         self._values = []
         self._timestamps = []
+        self._unit = None
         self._snap_x_to_ticks = False  # Only snap for completed tests
         
         self._cached_params = None
@@ -60,7 +61,7 @@ class GraphCanvas(tk.Canvas):
 
         self.bind('<Configure>', self._on_resize)
 
-    def set_data(self, values, timestamps, x_scale_hint=None, completed=False):
+    def set_data(self, values, timestamps, x_scale_hint=None, completed=False, unit=None):
         """
         Set the data to plot.
 
@@ -69,15 +70,17 @@ class GraphCanvas(tk.Canvas):
             timestamps: list of X values (timestamps)
             x_scale_hint: optional minimum X range (e.g., previous test duration)
             completed: if True, snap X axis to next tick if close
+            unit: unit of measurement for Y axis label (e.g., "gf")
         """
         values,timestamps = (list(values) if values else []),(list(timestamps) if timestamps else [])
-        params=(values,timestamps,x_scale_hint,completed)
-        
+        params=(values,timestamps,x_scale_hint,completed,unit)
+
         if self._cached_params==params:return #nothing to update
         self._cached_params=params
-        
+
         self._values = values
         self._timestamps = list(timestamps) if timestamps else []
+        self._unit = unit
         self._snap_x_to_ticks = completed
 
         if self._timestamps:
@@ -96,6 +99,8 @@ class GraphCanvas(tk.Canvas):
         """Clear the graph."""
         self._values = []
         self._timestamps = []
+        self._unit = None
+        self._cached_params = None
         self._x_min = 0.0
         self._x_max = 1.0
         self._y_min = 0.0
@@ -211,7 +216,8 @@ class GraphCanvas(tk.Canvas):
                            fill=self.COLOR_TEXT, font=('TkDefaultFont', 8))
 
         # Y axis title
-        self.create_text(15, (top + bottom) / 2, text='Load',
+        y_title = 'Load ({})'.format(self._unit) if self._unit else 'Load'
+        self.create_text(15, (top + bottom) / 2, text=y_title,
                         anchor='center', fill=self.COLOR_TEXT, angle=90)
 
     def _draw_line(self, left, top, width, height):

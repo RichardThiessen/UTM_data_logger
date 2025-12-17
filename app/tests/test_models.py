@@ -18,9 +18,15 @@ class TestTestClass(unittest.TestCase):
         test = Test()
         self.assertEqual(test.status, Test.STATUS_IN_PROGRESS)
         self.assertIsNone(test.error_message)
+        self.assertIsNone(test.unit)
         self.assertEqual(test.sample_count, 0)
         self.assertEqual(test.values, [])
         self.assertEqual(test.timestamps, [])
+
+    def test_unit_attribute(self):
+        """Test that unit can be set on construction."""
+        test = Test(unit='gf')
+        self.assertEqual(test.unit, 'gf')
 
     def test_add_sample(self):
         """Test adding samples."""
@@ -210,6 +216,45 @@ class TestTestSessionEventProcessing(unittest.TestCase):
         s.process_events()
 
         self.assertEqual(active.values, [1.0, 2.0])
+
+    def test_start_event_creates_test_with_unit(self):
+        """Test that start event creates a test with unit."""
+        s = TestSession()
+        s.queue.put(('start', 'gf'))
+        s.queue.put(('sample', 1.0, 1000.0))
+        s.process_events()
+
+        self.assertEqual(len(s.tests), 1)
+        self.assertEqual(s.tests[0].unit, 'gf')
+        self.assertEqual(s.tests[0].values, [1.0])
+
+    def test_start_event_with_no_unit(self):
+        """Test that start event with None unit works."""
+        s = TestSession()
+        s.queue.put(('start', None))
+        s.queue.put(('sample', 1.0, 1000.0))
+        s.process_events()
+
+        self.assertEqual(len(s.tests), 1)
+        self.assertIsNone(s.tests[0].unit)
+        self.assertEqual(s.tests[0].values, [1.0])
+
+    def test_multiple_tests_with_different_units(self):
+        """Test multiple tests with different units."""
+        s = TestSession()
+        # First test with gf
+        s.queue.put(('start', 'gf'))
+        s.queue.put(('sample', 1.0, 1000.0))
+        s.queue.put(('complete',))
+        # Second test with N
+        s.queue.put(('start', 'N'))
+        s.queue.put(('sample', 2.0, 2000.0))
+        s.queue.put(('complete',))
+        s.process_events()
+
+        self.assertEqual(len(s.tests), 2)
+        self.assertEqual(s.tests[0].unit, 'gf')
+        self.assertEqual(s.tests[1].unit, 'N')
 
 
 if __name__ == '__main__':

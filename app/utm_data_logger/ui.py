@@ -458,7 +458,7 @@ class UTMLoggerApp(tk.Tk):
             self._last_test_duration = test.estimated_duration
 
         completed = test.status != Test.STATUS_IN_PROGRESS
-        self._graph.set_data(values, timestamps, self._last_test_duration, completed=completed)
+        self._graph.set_data(values, timestamps, self._last_test_duration, completed=completed, unit=test.unit)
 
     def _update_status(self):
         """Update status bar."""
@@ -542,6 +542,8 @@ class UTMLoggerApp(tk.Tk):
                     row.append(str(idx))
                 elif attr == 'sample_count':
                     row.append(str(test.sample_count))
+                elif attr == 'unit':
+                    row.append(test.unit or '')
                 else:
                     val = getattr(test, attr, None)
                     row.append('{:.4f}'.format(val) if val is not None else '')

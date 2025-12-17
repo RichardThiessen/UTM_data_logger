@@ -180,7 +180,11 @@ class SerialStream(ByteStream):
             # Block for at least 1 byte, then grab everything available up to size
             data = self._serial.read(1)
             if data:
-                waiting = self._serial.in_waiting
+                # inWaiting() for pyserial 2.x, in_waiting for 3.x
+                if hasattr(self._serial, 'in_waiting'):
+                    waiting = self._serial.in_waiting
+                else:
+                    waiting = self._serial.inWaiting()
                 extra = min(waiting, size - 1)
                 if extra > 0:
                     data += self._serial.read(extra)

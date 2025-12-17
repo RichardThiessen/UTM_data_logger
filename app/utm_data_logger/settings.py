@@ -31,6 +31,7 @@ EXPORT_COLUMNS = {
     'low': 'min_value',
     'stdev': 'stdev',
     'points': 'sample_count',
+    'unit': 'unit',
 }
 
 # Common baudrates for serial devices
@@ -124,8 +125,8 @@ def list_serial_ports():
     # Try pyserial's list_ports if available
     try:
         import serial.tools.list_ports
-        for port_info in serial.tools.list_ports.comports():
-            ports.append(port_info.device)
+        for port, desc, hwid in serial.tools.list_ports.comports():
+            ports.append(port)
         return sorted(ports)
     except ImportError:
         pass
