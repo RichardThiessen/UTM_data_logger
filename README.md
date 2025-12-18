@@ -2,18 +2,31 @@
 
 A Python application for real-time data acquisition, visualization, and analysis from Thwing Albert Universal Testing Machines (UTS/UTM).
 
-## Overview
-
-UTM Data Logger captures load cell measurements during material testing (tensile, compression, peel tests, etc.) and provides:
+This is confirmed to work on Thwing-Albert FP-2255 Friction/Peel Testers.
 
 ![Thwing-Albert FP-2255 Friction/Peel Tester](media/FP-2255.png)
 
-- Real-time data visualization
-- Statistical analysis (mean, peak, min, standard deviation)
-- Multi-test session management
-- Clipboard export for spreadsheet integration
+If the communications settings menu allows for mode:"Load Cell Data" then it should work.
+
+![Comms Settings](media/FP-2255_comms_settings.jpg)
+
+The 2260 Friction/Peel tester that later replaced the 2255 might support the "Load Cell Data" communication mode, if so this should work.
+
+## Overview
+
+![Screenshot of the application](media/UI_Screenshot.png)
+
+UTM Data Logger captures load cell measurements during material testing (tensile, compression, peel tests, etc.) and provides:
+
+- Real-time graphing of test data
+- Temporarily storing data for multiple tests in a selectable list
+- Viewing data from a given test as a graph
+- Clipboard export of that data for selected tests
+  - The same statistics the machine caluclates (Mean,Peak,Low,Standard deviation)
+  - raw data points can also be exported for further analysis or graphing
 - Both GUI and CLI interfaces
 - Portable Windows distribution (no installation required)
+  - compatible with windows XP or later
 
 ## Requirements
 
@@ -50,7 +63,7 @@ Or use the convenience script:
 ```
 
 **On Windows (portable distribution):**
-Double-click `UTM_Logger.bat`
+Double-click `UTM_Logger.bat` or the desktop shortcut
 
 **Workflow:**
 1. Open **File → Settings**
@@ -74,11 +87,7 @@ python reader_cli.py --serial /dev/ttyACM0 --baudrate 9600
 UTM_Logger_CLI.bat --serial COM3 --baudrate 9600
 ```
 
-Output format:
-```
-[SAMPLE] 45.123456 @ 1702000000.123
-[TEST_COMPLETE] @ 1702000010.456
-```
+Outputs an event stream of timestamped (sample, test_complete, error, disconnect) events.
 
 ### Debug Mode
 
@@ -119,16 +128,18 @@ Available columns: `test`, `mean`, `peak`, `low`, `stdev`, `unit`
 The application expects ASCII float values, one per line:
 
 ```
-45.123456
-46.234567
-47.345678
+45.123456 gf
+46.234567 gf
+47.345678 gf
 ```
 
-Tests are automatically delimited by gaps in data transmission (adaptive timeout detection).
+There is no explicit test end marker. The machine just stops sending data. The software wait for no new data to have been received to mark a test as having ended.
 
 ### Export
 
-Tab-separated values suitable for pasting into spreadsheets:
+Export is done to the clipboard by copying selected tests.
+
+The format is tab-separated values suitable for pasting into spreadsheets:
 
 ```
 Mean    Peak    Low     Stdev

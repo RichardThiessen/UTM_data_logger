@@ -36,6 +36,11 @@ enum Pattern {
 Pattern currentPattern = PATTERN_SINE;
 unsigned long testCount = 0;
 
+// Unit options (including leading space for easy concatenation)
+const char* UNITS[] = {" gf", " N", ""};
+const int UNIT_COUNT = 3;
+const char* currentUnit = "";
+
 // LED pin (Due has LED on pin 13)
 const int LED_PIN = 13;
 
@@ -95,13 +100,18 @@ void runTest() {
     // Cycle through patterns
     currentPattern = (Pattern)(testCount % PATTERN_COUNT);
 
+    // Select random unit for this test
+    currentUnit = UNITS[random(UNIT_COUNT)];
+
     for (unsigned long i = 0; i < SAMPLES_PER_TEST; i++) {
         // Generate and send sample
         float value = generateSample(i, SAMPLES_PER_TEST);
 
-        // Output as ASCII float with newline to both serial ports
-        Serial.println(value, 6);     // Programming port
-        SerialUSB.println(value, 6);  // Native USB port
+        // Output as ASCII float with optional unit to both serial ports
+        Serial.print(value, 6);
+        Serial.println(currentUnit);
+        SerialUSB.print(value, 6);
+        SerialUSB.println(currentUnit);
 
         // Blink LED (on during odd samples)
         digitalWrite(LED_PIN, (i & 1) ? HIGH : LOW);

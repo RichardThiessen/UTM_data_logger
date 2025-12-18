@@ -262,7 +262,8 @@ class UTMLoggerApp(tk.Tk):
         right_frame = ttk.Frame(paned)
         paned.add(right_frame, weight=3)
 
-        ttk.Label(right_frame, text='Graph').pack(anchor='w')
+        self._graph_title_var = tk.StringVar(value='Graph')
+        ttk.Label(right_frame, textvariable=self._graph_title_var).pack(anchor='w')
 
         self._graph = GraphCanvas(right_frame)
         self._graph.pack(fill='both', expand=True)
@@ -426,6 +427,7 @@ class UTMLoggerApp(tk.Tk):
             self._update_graph()
         else:
             self._graph.clear()
+            self._graph_title_var.set('Graph')
 
     def _select_tests(self, tests):
         """Programmatically select tests in listbox."""
@@ -446,9 +448,16 @@ class UTMLoggerApp(tk.Tk):
         """Update graph with first selected test's data."""
         if not self._selected_tests:
             self._graph.clear()
+            self._graph_title_var.set('Graph')
             return
 
         test = self._selected_tests[0]
+        # Update graph title with test number
+        if test in self._shadow_tests:
+            test_num = self._shadow_tests.index(test) + 1
+            self._graph_title_var.set('Graph of Test {}'.format(test_num))
+        else:
+            self._graph_title_var.set('Graph')
         values, timestamps = test.values, test.timestamps
         logger.debug("update_graph: %d points, duration_hint=%.3f",
                      len(values), self._last_test_duration)
