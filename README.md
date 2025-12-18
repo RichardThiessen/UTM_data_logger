@@ -6,6 +6,8 @@ A Python application for real-time data acquisition, visualization, and analysis
 
 UTM Data Logger captures load cell measurements during material testing (tensile, compression, peel tests, etc.) and provides:
 
+![Thwing-Albert FP-2255 Friction/Peel Tester](media/FP-2255.png)
+
 - Real-time data visualization
 - Statistical analysis (mean, peak, min, standard deviation)
 - Multi-test session management
